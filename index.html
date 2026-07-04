@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Trade Check">
+<meta name="theme-color" content="#f6f8fa">
+<title>Pre-Trade Checklist</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f6f8fa'/><text x='50' y='68' font-size='55' text-anchor='middle'>✅</text></svg>">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root {
+    --bg:#f6f8fa; --card:#ffffff; --border:#d8dee4;
+    --text:#1f2328; --dim:#646c76;
+    --green:#1a7f37; --green-soft:rgba(26,127,55,.08);
+    --red:#d1242f; --red-soft:rgba(209,36,47,.07);
+    --amber:#9a6700; --amber-soft:rgba(154,103,0,.08);
+    --blue:#0969da;
+  }
+  html,body { height:100%; }
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Segoe UI,Roboto,sans-serif;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overscroll-behavior:none;
+  }
+  .screen { display:none; min-height:100dvh; flex-direction:column; padding:20px; max-width:520px; margin:0 auto; }
+  .screen.active { display:flex; }
+
+  /* ---------- HOME ---------- */
+  .brand { text-align:center; margin-top:36px; }
+  .brand .logo { font-size:44px; }
+  .brand h1 { font-size:26px; font-weight:700; margin-top:10px; letter-spacing:-.02em; }
+  .brand p { color:var(--dim); font-size:14px; margin-top:6px; }
+  .quote { text-align:center; color:var(--dim); font-size:12.5px; font-style:italic; margin-top:14px; padding:0 10px; line-height:1.5; }
+
+  .section-label { color:var(--dim); font-size:12px; text-transform:uppercase; letter-spacing:.08em; margin:28px 0 10px; font-weight:600; }
+  .pair-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .pair-btn {
+    background:var(--card); border:1px solid var(--border); color:var(--text);
+    border-radius:14px; padding:16px 4px; font-size:15px; font-weight:600; cursor:pointer;
+    transition:transform .08s, border-color .12s;
+  }
+  .pair-btn:active { transform:scale(.95); border-color:var(--blue); }
+  .custom-row { display:flex; gap:10px; margin-top:10px; }
+  .custom-row input {
+    flex:1; background:var(--card); border:1px solid var(--border); color:var(--text);
+    border-radius:14px; padding:14px 16px; font-size:16px; outline:none; text-transform:uppercase;
+  }
+  .custom-row input:focus { border-color:var(--blue); }
+  .custom-row button {
+    background:var(--blue); border:none; color:#fff; border-radius:14px; padding:0 22px;
+    font-size:15px; font-weight:700; cursor:pointer;
+  }
+  .history-link {
+    margin-top:auto; padding:16px; text-align:center; background:var(--card);
+    border:1px solid var(--border); border-radius:14px; color:var(--text);
+    font-size:15px; font-weight:600; cursor:pointer; margin-bottom:8px;
+  }
+  .history-link span { color:var(--dim); font-weight:400; }
+
+  /* ---------- CHECKLIST ---------- */
+  .top-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .top-bar .pair-tag { font-size:14px; font-weight:700; background:var(--card); border:1px solid var(--border); padding:6px 14px; border-radius:20px; }
+  .top-bar .count { color:var(--dim); font-size:13px; font-variant-numeric:tabular-nums; }
+  .icon-btn { background:none; border:none; color:var(--dim); font-size:15px; cursor:pointer; padding:6px; }
+  .progress-track { height:5px; background:var(--card); border-radius:3px; margin:12px 0 8px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--blue),var(--green)); border-radius:3px; width:0%; transition:width .25s ease; }
+  .tick-tally { display:flex; justify-content:space-between; font-size:12.5px; color:var(--dim); font-variant-numeric:tabular-nums; }
+  .tick-tally .yes { color:var(--green); } .tick-tally .no { color:var(--red); }
+
+  .q-wrap { flex:1; display:flex; flex-direction:column; justify-content:center; }
+  .q-card {
+    background:var(--card); border:1px solid var(--border); border-radius:20px;
+    padding:30px 24px; min-height:200px; display:flex; flex-direction:column; justify-content:center;
+    animation:slideIn .22s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:none; } }
+  .q-cat { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--blue); margin-bottom:14px; }
+  .q-text { font-size:20px; font-weight:600; line-height:1.45; letter-spacing:-.01em; }
+  .q-note { margin-top:14px; font-size:13.5px; color:var(--amber); line-height:1.4; }
+
+  .answer-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:22px; }
+  .btn-yes, .btn-no {
+    border:none; border-radius:16px; padding:20px; font-size:18px; font-weight:700; cursor:pointer;
+    transition:transform .08s;
+  }
+  .btn-yes { background:var(--green); color:#fff; }
+  .btn-no { background:var(--red-soft); color:var(--red); border:1.5px solid var(--red); }
+  .btn-yes:active, .btn-no:active { transform:scale(.95); }
+  .btn-na {
+    margin-top:12px; background:none; border:1px dashed var(--border); color:var(--dim);
+    border-radius:14px; padding:13px; font-size:14px; cursor:pointer; width:100%;
+  }
+  .back-mini { margin-top:14px; background:none; border:none; color:var(--dim); font-size:14px; cursor:pointer; width:100%; padding:8px; }
+
+  /* ---------- RESULT ---------- */
+  .verdict-box { text-align:center; margin-top:30px; padding:34px 20px; border-radius:22px; animation:pop .3s ease; }
+  @keyframes pop { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:none; } }
+  .verdict-box.go { background:var(--green-soft); border:1.5px solid var(--green); }
+  .verdict-box.stop { background:var(--red-soft); border:1.5px solid var(--red); }
+  .verdict-emoji { font-size:52px; }
+  .verdict-title { font-size:28px; font-weight:800; margin-top:12px; letter-spacing:-.02em; }
+  .go .verdict-title { color:var(--green); } .stop .verdict-title { color:var(--red); }
+  .verdict-sub { color:var(--dim); font-size:14px; margin-top:8px; line-height:1.5; }
+
+  .stat-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:16px; }
+  .stat { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px 8px; text-align:center; }
+  .stat .num { font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .stat .lbl { font-size:11.5px; color:var(--dim); margin-top:4px; text-transform:uppercase; letter-spacing:.05em; }
+  .stat.ticked .num { color:var(--green); } .stat.unticked .num { color:var(--red); } .stat.skipped .num { color:var(--dim); }
+
+  .miss-list { margin-top:20px; }
+  .miss-item {
+    background:var(--card); border:1px solid var(--border); border-left:3px solid var(--red);
+    border-radius:12px; padding:13px 14px; font-size:14px; line-height:1.45; margin-bottom:8px; color:var(--text);
+  }
+  .primary-btn {
+    background:var(--blue); border:none; color:#fff; border-radius:16px; padding:18px;
+    font-size:17px; font-weight:700; cursor:pointer; width:100%; margin-top:24px;
+  }
+  .ghost-btn {
+    background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:16px;
+    padding:16px; font-size:15px; font-weight:600; cursor:pointer; width:100%; margin-top:10px; margin-bottom:20px;
+  }
+
+  /* ---------- HISTORY ---------- */
+  .hist-head { display:flex; align-items:center; justify-content:space-between; margin:10px 0 18px; }
+  .hist-head h2 { font-size:22px; font-weight:700; }
+  .hist-empty { color:var(--dim); text-align:center; margin-top:80px; font-size:15px; line-height:1.6; }
+  .hist-card {
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:16px; margin-bottom:12px; cursor:pointer;
+  }
+  .hist-top { display:flex; justify-content:space-between; align-items:center; }
+  .hist-pair { font-size:17px; font-weight:700; }
+  .hist-badge { font-size:12px; font-weight:700; padding:5px 12px; border-radius:20px; }
+  .hist-badge.go { background:var(--green-soft); color:var(--green); }
+  .hist-badge.stop { background:var(--red-soft); color:var(--red); }
+  .hist-meta { color:var(--dim); font-size:12.5px; margin-top:6px; }
+  .hist-score { font-size:13px; margin-top:8px; font-variant-numeric:tabular-nums; }
+  .hist-score .g { color:var(--green); font-weight:700; } .hist-score .r { color:var(--red); font-weight:700; }
+  .hist-detail { display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px; }
+  .hist-card.open .hist-detail { display:block; }
+  .hist-detail .di { font-size:13px; line-height:1.5; padding:5px 0; color:var(--dim); }
+  .hist-detail .di.y::before { content:"✓ "; color:var(--green); font-weight:700; }
+  .hist-detail .di.n::before { content:"✗ "; color:var(--red); font-weight:700; }
+  .hist-detail .di.s::before { content:"— "; color:var(--dim); }
+  .hist-detail .di.n { color:var(--text); }
+  .clear-btn { background:none; border:none; color:var(--red); font-size:13.5px; cursor:pointer; font-weight:600; }
+  .dl-btn {
+    margin-top:12px; width:100%; background:none; border:1px solid var(--border); color:var(--blue);
+    border-radius:12px; padding:12px; font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .dl-btn:active { transform:scale(.97); }
+  .q-card, .hist-card, .stat, .pair-btn, .history-link, .verdict-box, .miss-item {
+    box-shadow:0 1px 3px rgba(31,35,40,.06), 0 1px 2px rgba(31,35,40,.04);
+  }
+  .verdict-box.go { background:#f0f9f2; }
+  .verdict-box.stop { background:#fdf2f2; }
+</style>
+</head>
+<body>
+
+<!-- HOME / PAIR SELECT -->
+<div class="screen active" id="screen-home">
+  <div class="brand">
+    <div class="logo">📋</div>
+    <h1>Pre-Trade Checklist</h1>
+    <p>Which pair are you trading?</p>
+  </div>
+
+  <div class="section-label">Select pair</div>
+  <div class="pair-grid" id="pairGrid"></div>
+  <div class="custom-row">
+    <input type="text" id="customPair" placeholder="Other pair…" autocapitalize="characters" autocomplete="off">
+    <button onclick="startCustom()">Go</button>
+  </div>
+
+  <div class="quote">"Without journaling your trades, you are constantly starting from scratch."</div>
+
+  <div class="history-link" onclick="showHistory()">🗂 Trade Log <span id="histCount"></span></div>
+</div>
+
+<!-- CHECKLIST -->
+<div class="screen" id="screen-check">
+  <div class="top-bar">
+    <button class="icon-btn" onclick="confirmExit()">✕</button>
+    <div class="pair-tag" id="checkPair"></div>
+    <div class="count" id="qCount"></div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="tick-tally"><span class="yes" id="tallyYes">✓ 0</span><span class="no" id="tallyNo">✗ 0</span></div>
+
+  <div class="q-wrap">
+    <div class="q-card" id="qCard">
+      <div class="q-cat" id="qCat"></div>
+      <div class="q-text" id="qText"></div>
+      <div class="q-note" id="qNote"></div>
+    </div>
+    <div class="answer-row">
+      <button class="btn-no" onclick="answer(false)">✗ No</button>
+      <button class="btn-yes" onclick="answer(true)">✓ Yes</button>
+    </div>
+    <button class="btn-na" onclick="answer(null)">Not applicable — skip</button>
+    <button class="back-mini" id="backBtn" onclick="goBack()">← Previous question</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="screen-result">
+  <div class="verdict-box" id="verdictBox">
+    <div class="verdict-emoji" id="verdictEmoji"></div>
+    <div class="verdict-title" id="verdictTitle"></div>
+    <div class="verdict-sub" id="verdictSub"></div>
+  </div>
+  <div class="stat-row">
+    <div class="stat ticked"><div class="num" id="statYes">0</div><div class="lbl">Ticked</div></div>
+    <div class="stat unticked"><div class="num" id="statNo">0</div><div class="lbl">Unticked</div></div>
+    <div class="stat skipped"><div class="num" id="statSkip">0</div><div class="lbl">N/A</div></div>
+  </div>
+  <div class="miss-list" id="missList"></div>
+  <button class="primary-btn" onclick="goHome()">New Checklist</button>
+  <button class="ghost-btn" onclick="showHistory()">View Trade Log</button>
+</div>
+
+<!-- HISTORY -->
+<div class="screen" id="screen-history">
+  <div class="hist-head">
+    <button class="icon-btn" onclick="goHome()">← Back</button>
+    <h2>Trade Log</h2>
+    <button class="clear-btn" onclick="clearHistory()">Clear</button>
+  </div>
+  <div id="histList"></div>
+</div>
+
+<script>
+// ------- Checklist definition -------
+// cond: "xau"  -> only asked when pair contains XAU
+// cond: "sbr"  -> only asked when the SBR/DBR gate question was answered Yes
+const CHECKLIST = [
+  { cat:"Session & News", text:"Trade is within London or New York session" },
+  { cat:"Risk", text:"XAU/USD: Stop loss is NOT more than 1% of account size", cond:"xau",
+    note:"Do not trade gold if the SL exceeds 1% of your account." },
+  { cat:"Session & News", text:"No major news within the next 15–30 minutes" },
+  { cat:"Session & News", text:"If near session overlap → SL placed slightly above/below the zone",
+    note:"Session overlaps bring higher volatility." },
+  { cat:"Higher Timeframe", text:"HTF (1hr / 4hr / Daily) direction is confirmed and aligned with trade direction" },
+  { cat:"Structure", text:"15min structure reversal is occurring inside a 1hr or 4hr zone",
+    note:"Not just a 15min zone reaction." },
+  { cat:"Higher Timeframe", text:"No major opposing zone on HTF directly below/above entry that would invalidate the trade" },
+  { cat:"Zones", text:"There is a clear, clean zone on the LEFT on the 15min timeframe",
+    note:"Not just a higher timeframe zone." },
+  { cat:"Reversal Patterns", text:"No double bottom (for shorts) or double top (for longs) visible on any timeframe below/above entry" },
+  { cat:"Reversal Patterns", text:"No H&S or inverse H&S pattern forming below/above entry that suggests reversal" },
+  { cat:"Structure", text:"Double top/bottom is NOT being treated as a break of structure",
+    note:"Only a clean break of PREVIOUS structure counts." },
+  { cat:"Setup Type", text:"Is this an SBR / DBR setup?", gate:"sbr",
+    note:"Answering No skips the SBR/DBR-only checks." },
+  { cat:"SBR / DBR", text:"SBR/DBR zone break candle is clean and decisive (large body, minimal wicks)", cond:"sbr",
+    note:"If clean → can enter carefree." },
+  { cat:"SBR / DBR", text:"If SBR/DBR zone break candle has wicks → extra caution on SL placement", cond:"sbr",
+    note:"Wider SL above zone / HTF zone." },
+  { cat:"SBR / DBR", text:"If an HTF SBR/DBR zone exists within the 15min entry zone → SL placed ABOVE the HTF zone", cond:"sbr" },
+  { cat:"Zones", text:"Price has RETURNED to retest the broken zone",
+    note:"Not just touching it on the way through." },
+  { cat:"Risk", text:"SL is NOT inside a nearby zone or between zones",
+    note:"Must be clearly above/below all relevant zones." },
+  { cat:"Discipline", text:"Setup feels clear and not confusing",
+    note:"If in doubt, stay out." },
+  { cat:"Discipline", text:"Analyzed setup on HTF — not rushing the entry" },
+  { cat:"Discipline", text:"Trade has NOT been analyzed on the phone" },
+];
+const MAX_UNTICKED = 5; // more than 5 unticked -> do not enter
+const PAIRS = ["XAU/USD","GBP/USD","USD/JPY"];
+const LS_KEY = "tradeChecklistHistory";
+
+// ------- State -------
+let pair = "", queue = [], idx = 0, answers = []; // answers[i]: true / false / null(N/A)
+let sbrGateIdx = -1;
+
+// ------- Screens -------
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+// ------- Home -------
+const grid = document.getElementById("pairGrid");
+PAIRS.forEach(p => {
+  const b = document.createElement("button");
+  b.className = "pair-btn"; b.textContent = p;
+  b.onclick = () => startChecklist(p);
+  grid.appendChild(b);
+});
+document.getElementById("customPair").addEventListener("keydown", e => { if (e.key === "Enter") startCustom(); });
+function startCustom() {
+  const v = document.getElementById("customPair").value.trim().toUpperCase();
+  if (v) startChecklist(v);
+}
+function updateHistCount() {
+  const n = loadHistory().length;
+  document.getElementById("histCount").textContent = n ? `(${n})` : "";
+}
+
+// ------- Checklist flow -------
+function startChecklist(p) {
+  pair = p;
+  const isXau = p.toUpperCase().includes("XAU") || p.toUpperCase().includes("GOLD");
+  queue = CHECKLIST.filter(q => q.cond !== "xau" || isXau);
+  sbrGateIdx = queue.findIndex(q => q.gate === "sbr");
+  idx = 0;
+  answers = new Array(queue.length).fill(undefined);
+  document.getElementById("checkPair").textContent = pair;
+  document.getElementById("customPair").value = "";
+  show("screen-check");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = queue[idx];
+  document.getElementById("qCat").textContent = q.cat;
+  document.getElementById("qText").textContent = q.text;
+  document.getElementById("qNote").textContent = q.note || "";
+  document.getElementById("qNote").style.display = q.note ? "block" : "none";
+  document.getElementById("qCount").textContent = (idx + 1) + " / " + queue.length;
+  document.getElementById("progressFill").style.width = (idx / queue.length * 100) + "%";
+  document.getElementById("backBtn").style.visibility = idx === 0 ? "hidden" : "visible";
+  const yes = answers.filter(a => a === true).length;
+  const no = answers.filter(a => a === false).length;
+  document.getElementById("tallyYes").textContent = "✓ " + yes;
+  document.getElementById("tallyNo").textContent = "✗ " + no;
+  // restart card animation
+  const card = document.getElementById("qCard");
+  card.style.animation = "none"; card.offsetHeight; card.style.animation = "";
+}
+
+function answer(val) {
+  answers[idx] = val;
+  // SBR/DBR gate answered No or N/A -> auto-skip dependent questions
+  if (queue[idx].gate === "sbr" && val !== true) {
+    answers[idx] = null; // gate itself doesn't count against you
+    for (let j = idx + 1; j < queue.length; j++) if (queue[j].cond === "sbr") answers[j] = null;
+  }
+  // advance past anything already auto-answered
+  idx++;
+  while (idx < queue.length && answers[idx] === null && queue[idx].cond === "sbr" && answers[sbrGateIdx] === null) idx++;
+  if (idx >= queue.length) { finish(); return; }
+  renderQuestion();
+}
+
+function goBack() {
+  if (idx === 0) return;
+  idx--;
+  // jump back over auto-skipped SBR questions
+  while (idx > 0 && queue[idx].cond === "sbr" && answers[sbrGateIdx] === null) idx--;
+  answers[idx] = undefined;
+  // if stepping back onto the gate, un-skip its dependents
+  if (queue[idx].gate === "sbr") for (let j = idx + 1; j < queue.length; j++) if (queue[j].cond === "sbr") answers[j] = undefined;
+  renderQuestion();
+}
+
+function confirmExit() {
+  if (confirm("Abandon this checklist?")) goHome();
+}
+
+// ------- Result -------
+function finish() {
+  const yes = answers.filter(a => a === true).length;
+  const no = answers.filter(a => a === false).length;
+  const skip = answers.filter(a => a === null).length;
+  const go = no <= MAX_UNTICKED;
+
+  const box = document.getElementById("verdictBox");
+  box.className = "verdict-box " + (go ? "go" : "stop");
+  document.getElementById("verdictEmoji").textContent = go ? "✅" : "🚫";
+  document.getElementById("verdictTitle").textContent = go ? "OK TO TRADE" : "DO NOT ENTER";
+  document.getElementById("verdictSub").textContent = go
+    ? `${no} unticked — within your limit of ${MAX_UNTICKED}. Stay disciplined.`
+    : `${no} unticked — more than ${MAX_UNTICKED}. Your rules say stay out.`;
+  document.getElementById("statYes").textContent = yes;
+  document.getElementById("statNo").textContent = no;
+  document.getElementById("statSkip").textContent = skip;
+
+  const miss = document.getElementById("missList");
+  miss.innerHTML = "";
+  if (no > 0) {
+    const h = document.createElement("div");
+    h.className = "section-label"; h.textContent = "Unticked items"; h.style.margin = "20px 0 10px";
+    miss.appendChild(h);
+    queue.forEach((q, i) => {
+      if (answers[i] === false) {
+        const d = document.createElement("div");
+        d.className = "miss-item"; d.textContent = q.text;
+        miss.appendChild(d);
+      }
+    });
+  }
+
+  saveEntry({ pair, ts: Date.now(), yes, no, skip, go,
+    items: queue.map((q, i) => ({ t: q.text, a: answers[i] })) });
+  show("screen-result");
+}
+
+function goHome() { updateHistCount(); show("screen-home"); }
+
+// ------- History (localStorage) -------
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch (e) { return []; }
+}
+function saveEntry(entry) {
+  const h = loadHistory();
+  h.unshift(entry);
+  localStorage.setItem(LS_KEY, JSON.stringify(h.slice(0, 200)));
+}
+function clearHistory() {
+  if (confirm("Delete all logged entries?")) {
+    localStorage.removeItem(LS_KEY);
+    showHistory();
+  }
+}
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString(undefined, { day:"numeric", month:"short", year:"numeric" }) +
+    " · " + d.toLocaleTimeString(undefined, { hour:"2-digit", minute:"2-digit" });
+}
+function showHistory() {
+  const list = document.getElementById("histList");
+  const h = loadHistory();
+  list.innerHTML = "";
+  if (!h.length) {
+    list.innerHTML = '<div class="hist-empty">No entries yet.<br>Complete a checklist and it will be logged here.</div>';
+  }
+  h.forEach(e => {
+    const c = document.createElement("div");
+    c.className = "hist-card";
+    c.innerHTML =
+      '<div class="hist-top"><span class="hist-pair">' + esc(e.pair) + '</span>' +
+      '<span class="hist-badge ' + (e.go ? "go" : "stop") + '">' + (e.go ? "OK TO TRADE" : "DO NOT ENTER") + '</span></div>' +
+      '<div class="hist-meta">' + fmtDate(e.ts) + '</div>' +
+      '<div class="hist-score"><span class="g">✓ ' + e.yes + '</span> · <span class="r">✗ ' + e.no + '</span>' +
+      (e.skip ? ' · — ' + e.skip + ' n/a' : '') + '</div>' +
+      '<div class="hist-detail">' + e.items.map(it =>
+        '<div class="di ' + (it.a === true ? "y" : it.a === false ? "n" : "s") + '">' + esc(it.t) + '</div>'
+      ).join("") +
+      '<button class="dl-btn">⬇︎ Download as text file</button></div>';
+    c.onclick = () => c.classList.toggle("open");
+    c.querySelector(".dl-btn").onclick = ev => { ev.stopPropagation(); downloadEntry(e); };
+    list.appendChild(c);
+  });
+  show("screen-history");
+}
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+// ------- Export a log entry as a .txt file -------
+function downloadEntry(e) {
+  const line = "=".repeat(46);
+  const mark = a => a === true ? "[x]" : a === false ? "[ ]" : "[--]";
+  const ticked = e.items.filter(i => i.a === true);
+  const unticked = e.items.filter(i => i.a === false);
+  const na = e.items.filter(i => i.a === null);
+  let txt = line + "\nPRE-TRADE CHECKLIST — TRADE LOG\n" + line + "\n\n" +
+    "Pair:      " + e.pair + "\n" +
+    "Date:      " + fmtDate(e.ts) + "\n" +
+    "Verdict:   " + (e.go ? "OK TO TRADE" : "DO NOT ENTER") + "\n" +
+    "Score:     " + e.yes + " ticked / " + e.no + " unticked" + (e.skip ? " / " + e.skip + " n/a" : "") + "\n" +
+    "Rule:      more than " + MAX_UNTICKED + " unticked = do not enter\n\n" +
+    line + "\nCHECKLIST  ([x] yes · [ ] no · [--] n/a)\n" + line + "\n\n" +
+    e.items.map(it => mark(it.a) + " " + it.t).join("\n") + "\n";
+  if (unticked.length) {
+    txt += "\n" + line + "\nUNTICKED ITEMS (" + unticked.length + ")\n" + line + "\n\n" +
+      unticked.map(it => "- " + it.t).join("\n") + "\n";
+  }
+  txt += "\n" + line + "\n\"Without journaling your trades, you are\nconstantly starting from scratch.\"\n" + line + "\n";
+
+  const d = new Date(e.ts);
+  const stamp = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" +
+    String(d.getDate()).padStart(2, "0") + "_" + String(d.getHours()).padStart(2, "0") +
+    String(d.getMinutes()).padStart(2, "0");
+  const fname = "trade-log_" + e.pair.replace(/[^A-Za-z0-9]+/g, "-") + "_" + stamp + ".txt";
+  const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1000);
+}
+
+updateHistCount();
+</script>
+</body>
+</html>
